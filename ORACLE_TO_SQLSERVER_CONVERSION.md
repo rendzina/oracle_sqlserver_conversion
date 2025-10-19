@@ -15,13 +15,13 @@ This project provides a comprehensive solution for converting Oracle SQL DDL and
 
 ### Core Files
 - **`oracle_to_sqlserver_converter.py`** - Main conversion script with comprehensive fixes
-- **`oracletables.sql`** - Original Oracle database export (204 MB, 713,526 lines)
+- **`oracletables.sql`** - Original Oracle database export
 - **`sample.py`** - Sample conversion script for testing
 - **`sample.sql`** - Sample Oracle data for testing
 
 ### Generated Output Files
-- **`oracletables_sqlserver_definitions.sql`** - Converted table definitions (24.7 KB)
-- **`oracletables_sqlserver_inserts_all.sql`** - All INSERT statements (180.7 MB)
+- **`oracletables_sqlserver_definitions.sql`** - Converted table definitions
+- **`oracletables_sqlserver_inserts_all.sql`** - All INSERT statements
 - **`oracletables_sqlserver_inserts_chunk_01.sql` through `chunk_08.sql`** - INSERT statements split into 100,000-line chunks
 
 ## Quick Start
@@ -33,13 +33,15 @@ This project provides a comprehensive solution for converting Oracle SQL DDL and
 
 ### Basic Usage
 
+An Oracle DDL SQL file with tabe definitions and INSERT statements is creted as an export file in a tool such as Oracle SQL Developer. This is the input file for processing, e.g. 'oracletables.sql'.
+
 ```bash
 # Convert Oracle SQL to SQL Server format
 python3 oracle_to_sqlserver_converter.py oracletables.sql
 
 # The script will generate:
-# - Table definitions file
-# - All INSERT statements file  
+# - SQL Table definitions file
+# - All INSERT statements file (for ALL data rows)
 # - Chunked INSERT files (8 files of ~100,000 lines each)
 ```
 
