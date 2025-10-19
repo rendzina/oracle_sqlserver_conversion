@@ -1,5 +1,12 @@
 # Oracle to SQL Server Conversion Guide
 
+The code has been provided as part of the open source output for the Landis Portal database conversion project.
+
+http://www.landis.org.uk
+
+Author: Stephen Hallett, Cranfield University
+Date: 2025-10-19
+
 ## Overview
 
 This project provides a comprehensive solution for converting Oracle SQL DDL and DML statements to SQL Server format. The conversion handles complex data type mappings, syntax differences, and data integrity issues that commonly occur when migrating from Oracle to SQL Server.
@@ -8,14 +15,14 @@ This project provides a comprehensive solution for converting Oracle SQL DDL and
 
 ### Core Files
 - **`oracle_to_sqlserver_converter.py`** - Main conversion script with comprehensive fixes
-- **`landis_admin_tables.sql`** - Original Oracle database export (204 MB, 713,526 lines)
+- **`oracletables.sql`** - Original Oracle database export (204 MB, 713,526 lines)
 - **`sample.py`** - Sample conversion script for testing
 - **`sample.sql`** - Sample Oracle data for testing
 
 ### Generated Output Files
-- **`landis_admin_tables_sqlserver_definitions.sql`** - Converted table definitions (24.7 KB)
-- **`landis_admin_tables_sqlserver_inserts_all.sql`** - All INSERT statements (180.7 MB)
-- **`landis_admin_tables_sqlserver_inserts_chunk_01.sql` through `chunk_08.sql`** - INSERT statements split into 100,000-line chunks
+- **`oracletables_sqlserver_definitions.sql`** - Converted table definitions (24.7 KB)
+- **`oracletables_sqlserver_inserts_all.sql`** - All INSERT statements (180.7 MB)
+- **`oracletables_sqlserver_inserts_chunk_01.sql` through `chunk_08.sql`** - INSERT statements split into 100,000-line chunks
 
 ## Quick Start
 
@@ -28,7 +35,7 @@ This project provides a comprehensive solution for converting Oracle SQL DDL and
 
 ```bash
 # Convert Oracle SQL to SQL Server format
-python3 oracle_to_sqlserver_converter.py landis_admin_tables.sql
+python3 oracle_to_sqlserver_converter.py oracletables.sql
 
 # The script will generate:
 # - Table definitions file
@@ -41,39 +48,36 @@ python3 oracle_to_sqlserver_converter.py landis_admin_tables.sql
 1. **First**: Run the table definitions
    ```sql
    -- Execute in SQL Server
-   landis_admin_tables_sqlserver_definitions.sql
+   oracletables_sqlserver_definitions.sql
    ```
 
 2. **Then**: Run the data chunks in order
    ```sql
    -- Execute in SQL Server (in order)
-   landis_admin_tables_sqlserver_inserts_chunk_01.sql
-   landis_admin_tables_sqlserver_inserts_chunk_02.sql
-   landis_admin_tables_sqlserver_inserts_chunk_03.sql
-   landis_admin_tables_sqlserver_inserts_chunk_04.sql
-   landis_admin_tables_sqlserver_inserts_chunk_05.sql
-   landis_admin_tables_sqlserver_inserts_chunk_06.sql
-   landis_admin_tables_sqlserver_inserts_chunk_07.sql
-   landis_admin_tables_sqlserver_inserts_chunk_08.sql
+   oracletables_sqlserver_inserts_chunk_01.sql
+   oracletables_sqlserver_inserts_chunk_02.sql
+   ...
+   oracletables_sqlserver_inserts_chunk_07.sql
+   oracletables_sqlserver_inserts_chunk_08.sql
    ```
 
 ## Conversion Features
 
 ### Data Type Mappings
 
-| Oracle Type | SQL Server Type | Notes |
-|-------------|-----------------|-------|
-| `NUMBER` | `DECIMAL(18,0)` | Default precision |
-| `NUMBER(1)` | `BIT` | Boolean values |
-| `NUMBER(3)` | `TINYINT` | Small integers |
-| `NUMBER(5)` | `SMALLINT` | Medium integers |
+| Oracle Type  | SQL Server Type | Notes |
+|--------------|-----------------|-------|
+| `NUMBER`     | `DECIMAL(18,0)` | Default precision |
+| `NUMBER(1)`  | `BIT` | Boolean values |
+| `NUMBER(3)`  | `TINYINT` | Small integers |
+| `NUMBER(5)`  | `SMALLINT` | Medium integers |
 | `NUMBER(10)` | `INT` | Standard integers |
 | `NUMBER(19)` | `BIGINT` | Large integers |
-| `VARCHAR2` | `NVARCHAR` | Unicode strings |
-| `VARCHAR` | `NVARCHAR` | Unicode strings |
-| `CHAR` | `NCHAR` | Unicode fixed strings |
-| `DATE` | `DATETIME2` | Date/time values |
-| `TIMESTAMP` | `DATETIME2` | High-precision timestamps |
+| `VARCHAR2`   | `NVARCHAR` | Unicode strings |
+| `VARCHAR`    | `NVARCHAR` | Unicode strings |
+| `CHAR`       | `NCHAR` | Unicode fixed strings |
+| `DATE`       | `DATETIME2` | Date/time values |
+| `TIMESTAMP`  | `DATETIME2` | High-precision timestamps |
 
 ### Function Conversions
 
@@ -146,14 +150,6 @@ The conversion script includes extensive fixes for common data issues:
 ### 8. Oracle-Specific Statements
 **Problem**: Oracle-specific commands not supported in SQL Server
 **Solution**: Comments out statements like `USE`, `SET DEFINE`, `ALTER SESSION`
-
-## Conversion Statistics
-
-For the LandIS database conversion:
-- **Tables processed**: 46
-- **INSERT statements processed**: 710,637
-- **Total lines processed**: 713,525
-- **Output files**: 10 (1 definitions + 1 all-inserts + 8 chunks)
 
 ## Troubleshooting
 

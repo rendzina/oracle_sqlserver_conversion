@@ -2,28 +2,34 @@
 
 This project provides a comprehensive solution for converting Oracle database exports to SQL Server format. The conversion tool handles complex data type mappings, syntax differences, and data integrity issues automatically.
 
-The code is provided as part of the open source output of the Landis Portal database conversion project.
+The code has been provided as part of the open source output for the Landis Portal database conversion project.
+
+http://www.landis.org.uk
 
 Author: Stephen Hallett, Cranfield University
 Date: 2025-10-19
 
-## ✅ Conversion Complete
+## ✅ Conversion benefits
 
-The Oracle to SQL Server conversion has been successfully completed with comprehensive fixes for all known issues including apostrophe escaping, browser string conflicts, long identifiers, and malformed data.
+This Oracle to SQL Server conversion addresses all known issues including apostrophe escaping, browser string conflicts, long identifiers, and malformed data.
 
 ## Quick Start
 
 ### Files Ready for SQL Server
-- **Table Definitions**: `landis_admin_tables_sqlserver_definitions.sql`
-- **Data Chunks**: `landis_admin_tables_sqlserver_inserts_chunk_01.sql` through `chunk_08.sql`
+Starting with an exported Oracle SQL file named 'oracletables.sql', the converter produces:
+
+- **Table Definitions**: `oracletables_definitions.sql`
+- **Full converted Datas**: `oracletables_sqlserver_all.sql`
+- **Data Chunks**: `oracletables_sqlserver_inserts_chunk_01.sql` through `..chunk_08.sql` etc.
 
 ### Execution Order
 1. Run table definitions first
-2. Run data chunks in order (01 through 08)
+2. Try and load  the fully converted file. If too large, then
+2. Run data chunks in order (01 through 08 etc..)
 
 ### Conversion Tool
 ```bash
-python3 oracle_to_sqlserver_converter.py your_oracle_file.sql
+python3 oracle_to_sqlserver_converter.py oracletables.sql
 ```
 
 For detailed documentation, see [ORACLE_TO_SQLSERVER_CONVERSION.md](ORACLE_TO_SQLSERVER_CONVERSION.md)
@@ -31,8 +37,8 @@ For detailed documentation, see [ORACLE_TO_SQLSERVER_CONVERSION.md](ORACLE_TO_SQ
 ## Project Overview
 
 ### Original Database
-- **Source**: LandIS Oracle database export
-- **Schema**: The default schema is ADMIN
+- **Source**: An Oracle database SQL file export
+- **Schema**: As defined, with a default schema of ADMIN
 
 ## Conversion Process
 
@@ -107,12 +113,12 @@ python3 oracle_to_sqlserver_converter.py [-h] [-o OUTPUT] [--schema SCHEMA] [--v
 
 **Convert an Oracle database:**
 ```bash
-python3 oracle_to_sqlserver_converter.py oracle_input.sql
+python3 oracle_to_sqlserver_converter.py oracletables.sql
 ```
 
 **Specify custom output filename:**
 ```bash
-python3 oracle_to_sqlserver_converter.py oracle_database.sql -o custom_output.sql
+python3 oracle_to_sqlserver_converter.py oracletables.sql -o custom_output.sql
 ```
 
 **Convert a specific schema:**
@@ -131,12 +137,12 @@ For testing purposes, use the included `sample.py` script to create a small test
 
 **Basic usage:**
 ```bash
-python3 sample.py my_database_inserts.sql
+python3 sample.py my_database.sql
 ```
 
 **With custom options:**
 ```bash
-python3 sample.py database.sql -o test_sample.sql --samples 5
+python3 sample.py my_database.sql -o test_sample.sql --samples 5
 python3 sample.py hr_data.sql --schema HR --samples 2
 ```
 
@@ -156,10 +162,10 @@ python3 sample.py [-h] [-o OUTPUT] [--schema SCHEMA] [--samples SAMPLES] [--vers
 **Example workflow:**
 ```bash
 # Create sample from converted file
-python3 sample.py landis_admin_tables_sqlserver_inserts_all.sql
+python3 sample.py oracletables_sqlserver_inserts_all.sql
 
 # Test the converter with the sample
-python3 oracle_to_sqlserver_converter.py landis_admin_tables_sqlserver_inserts_all_sample.sql
+python3 oracle_to_sqlserver_converter.py oracletables_sqlserver_inserts_all_sample.sql
 ```
 
 The converter automatically generates multiple output files for better SQL Server compatibility:
@@ -211,47 +217,31 @@ The converter creates separate files to make SQL Server loading more manageable:
 
 The converter generates multiple files for optimal SQL Server compatibility:
 
-- **`landis_admin_tables_sqlserver_definitions.sql`**: Table definitions only (24KB)
-- **`landis_admin_tables_sqlserver_inserts_all.sql`**: All INSERT statements (169MB)
-- **`landis_admin_tables_sqlserver_inserts_chunk_01.sql` through `08.sql`**: INSERT chunks (22-30MB each)
+- **`oracletables_sqlserver_definitions.sql`**: Table definitions only (24KB)
+- **`oracletables_sqlserver_inserts_all.sql`**: All INSERT statements (169MB)
+- **`oracletables_sqlserver_inserts_chunk_01.sql` through `08.sql`**: INSERT chunks (22-30MB each)
 - **Console output**: Progress updates and conversion statistics
 
 ### Successful Conversion Example
 
 ```bash
 $ python3 oracle_to_sqlserver_converter.py
-Converting landis_admin_tables.sql to SQL Server format
-File size: 204.0 MB
-Processed 10,000 lines...
-Processed 20,000 lines...
-...
-Processed 710,000 lines...
-Splitting INSERT statements into 100,000 line chunks...
-Created 8 INSERT chunk files
-
-Conversion completed!
-Tables processed: 46
-INSERT statements processed: 710637
-Total lines processed: 713,525
-Output files:
-  - Table definitions: landis_admin_tables_sqlserver_definitions.sql
-  - All INSERT statements: landis_admin_tables_sqlserver_inserts_all.sql
-  - INSERT chunks: landis_admin_tables_sqlserver_inserts_chunk_*.sql
+Converting oracletables.sql to SQL Server format
 ```
 
 ### IF EXISTS Pattern Example
 
-The converter automatically adds Oracle `CREATE OR REPLACE` equivalent functionality:
+The converter automatically adds Oracle `CREATE OR REPLACE` equivalent functionality, allowing the script to be run and re-run. Below is an example for the notional table CLIENT_ENTITIES:
 
 ```sql
--- Table: CLIENT_MARKETING_ENTITIES
-IF EXISTS(SELECT name FROM sys.sysobjects WHERE Name = N'CLIENT_MARKETING_ENTITIES' AND xtype = N'U')
+-- Table: CLIENT_ENTITIES
+IF EXISTS(SELECT name FROM sys.sysobjects WHERE Name = N'CLIENT_ENTITIES' AND xtype = N'U')
 BEGIN
-    DROP TABLE [ADMIN].[CLIENT_MARKETING_ENTITIES]
+    DROP TABLE [ADMIN].[CLIENT_ENTITIES]
 END
 GO
 
-CREATE TABLE [ADMIN].[CLIENT_MARKETING_ENTITIES] (
+CREATE TABLE [ADMIN].[CLIENT_ENTITIES] (
     [NAME] NVARCHAR(100),
     [DESCRIPTION] NVARCHAR(200)
 );
@@ -265,25 +255,8 @@ GO
 oracle_sqlserver_conversion/
 ├── oracle_to_sqlserver_converter.py    # Generic conversion script (v2.0)
 ├── sample.py                           # Sample data generator for testing
-├── README.md                          # This documentation
-└── DATABASE_DOCUMENTATION.md          # Database analysis documentation
-```
-
-### Example Files (Landis Database)
-```text
-oracle_sqlserver_conversion/
-├── landis_admin_tables.sql                              # Original Oracle export (204MB)
-├── sample.sql                                          # Sample/test file (40KB)
-├── landis_admin_tables_sqlserver_definitions.sql      # Table definitions (24KB)
-├── landis_admin_tables_sqlserver_inserts_all.sql      # All INSERT statements (169MB)
-├── landis_admin_tables_sqlserver_inserts_chunk_01.sql # INSERT chunk 1 (27MB)
-├── landis_admin_tables_sqlserver_inserts_chunk_02.sql # INSERT chunk 2 (21MB)
-├── landis_admin_tables_sqlserver_inserts_chunk_03.sql # INSERT chunk 3 (22MB)
-├── landis_admin_tables_sqlserver_inserts_chunk_04.sql # INSERT chunk 4 (22MB)
-├── landis_admin_tables_sqlserver_inserts_chunk_05.sql # INSERT chunk 5 (22MB)
-├── landis_admin_tables_sqlserver_inserts_chunk_06.sql # INSERT chunk 6 (22MB)
-├── landis_admin_tables_sqlserver_inserts_chunk_07.sql # INSERT chunk 7 (30MB)
-└── landis_admin_tables_sqlserver_inserts_chunk_08.sql # INSERT chunk 8 (2.4MB)
+├── README.md                           # This documentation
+└── DATABASE_DOCUMENTATION.md           # Database analysis documentation
 ```
 
 ### Generic Output Pattern
@@ -367,32 +340,29 @@ The conversion process tracks:
 1. **Create Tables First**:
    ```sql
    -- Execute this file first to create all table structures
-   landis_admin_tables_sqlserver_definitions.sql
+   oracletables_sqlserver_definitions.sql
    ```
 
 2. **Load Data Using Chunks** (Recommended):
    ```sql
-   -- Execute these files in order for manageable loading
-   landis_admin_tables_sqlserver_inserts_chunk_01.sql
-   landis_admin_tables_sqlserver_inserts_chunk_02.sql
-   landis_admin_tables_sqlserver_inserts_chunk_03.sql
-   landis_admin_tables_sqlserver_inserts_chunk_04.sql
-   landis_admin_tables_sqlserver_inserts_chunk_05.sql
-   landis_admin_tables_sqlserver_inserts_chunk_06.sql
-   landis_admin_tables_sqlserver_inserts_chunk_07.sql
-   landis_admin_tables_sqlserver_inserts_chunk_08.sql
+   -- Execute the files in order for manageable loading
+   oracletables_sqlserver_inserts_chunk_01.sql
+   oracletables_sqlserver_inserts_chunk_02.sql
+   ...
+   oracletables_sqlserver_inserts_chunk_07.sql
+   oracletables_sqlserver_inserts_chunk_08.sql
    ```
 
 3. **Alternative: Load All Data at Once**:
    ```sql
    -- Use this file if your SQL Server can handle large files
-   landis_admin_tables_sqlserver_inserts_all.sql
+   oracletables_sqlserver_inserts_all.sql
    ```
 
 ### Deployment Benefits
 
-- **✅ Manageable File Sizes**: 22-30MB chunks vs 169MB total
-- **✅ Resumable**: If one chunk fails, restart from that chunk
+- **✅ Manageable File Sizes**: Typically c.50MB chunks vs 200+MB total
+- **✅ Resumable**: If one chunk fails, just restart from that chunk
 - **✅ Progress Tracking**: Can monitor progress through chunks
 - **✅ Error Isolation**: Issues isolated to specific chunks
 - **✅ Parallel Loading**: Could potentially load multiple chunks simultaneously
@@ -447,7 +417,7 @@ python3 oracle_to_sqlserver_converter.py production_data.sql -o prod_sqlserver.s
 **Convert different schema:**
 ```bash
 python3 oracle_to_sqlserver_converter.py hr_export.sql --schema HR
-# Converts HR schema tables instead of ADMIN
+# Converts HR schema tables instead of the default ADMIN
 ```
 
 **Test with sample data:**
@@ -618,7 +588,7 @@ The converter now successfully handles all the error types encountered in the or
 
 ### ✅ Production Ready
 
-The generated `landis_admin_tables_sqlserver.sql` file is now ready for production use with:
+The generated `oracletables__sqlserver.sql` file is made ready for production use with:
 - Zero syntax errors
 - Full SQL Server compatibility
 - Proper data type conversions
@@ -651,4 +621,3 @@ The only requirement is that you include the original copyright notice and licen
 ## Database Licenses
 
 Please ensure you have appropriate licenses for both your source Oracle database and target SQL Server database systems.
-
