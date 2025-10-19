@@ -1,9 +1,9 @@
 # Oracle to SQL Server Conversion Project .gitignore
 
-# SQL Files - Exclude all SQL files as they are large and generated
+# SQL Files - Exclude all SQL files as specific table data is not required for the project
 *.sql
 
-# Database Documentation - Exclude as requested
+# Database Documentation - Exclude any specific tables documentation files
 DATABASE_DOCUMENTATION.md
 
 # Python
