@@ -1,4 +1,6 @@
 # Oracle to SQL Server Conversion Project .gitignore
+# Author: Stephen Hallett, Cranfield University
+# Date: 19-10-2025
 
 # SQL Files - Exclude all SQL files as specific table data is not required for the project
 *.sql
