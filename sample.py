@@ -1,7 +1,26 @@
 #!/usr/bin/env python3
 """
+
+Sample
+
 Extract sample INSERT statements for each table from any SQL Server file.
-Creates a sample.sql file with a few INSERT statements per table.
+Creates a sample.sql file with a configurable number of INSERT statements per table.
+The script processes tables sequentially as they are encountered in the input file.
+
+The script will automatically:
+- create an output file with a configurable number of INSERT statements per table (default: 3)
+- process tables in the order they appear in the input file (sequential processing)
+- handle tables with fewer rows than the requested sample count gracefully
+- the output file will be in the same directory as the input file
+- the output file will be named the same as the input file but with the extension _sample.sql
+- the output file will contain only select INSERT statements for the tables in the input file
+
+The code is provided as part of the open source output of the Landis Portal database conversion project.
+
+Author: Stephen Hallett, Cranfield University
+Date: 2025-10-19
+License: MIT License - see LICENSE file for details
+http://www.landis.org.uk
 """
 
 import re
@@ -24,6 +43,8 @@ def extract_sample_inserts(input_file, output_file, samples_per_table=3, schema_
     
     # Dictionary to track INSERT statements per table
     table_inserts = {}
+    # List to maintain order of tables as they're encountered
+    table_order = []
     
     with open(input_file, 'r', encoding='utf-8', errors='ignore') as infile:
         for line_num, line in enumerate(infile, 1):
@@ -51,6 +72,7 @@ def extract_sample_inserts(input_file, output_file, samples_per_table=3, schema_
                     # Initialize list for this table if not exists
                     if table_name not in table_inserts:
                         table_inserts[table_name] = []
+                        table_order.append(table_name)  # Track order of first encounter
                     
                     # Add INSERT statement if we haven't reached the limit
                     if len(table_inserts[table_name]) < samples_per_table:
@@ -70,43 +92,16 @@ def extract_sample_inserts(input_file, output_file, samples_per_table=3, schema_
         outfile.write("-- Table definitions (CREATE TABLE statements) are excluded\n")
         outfile.write("-- Generated automatically for testing and reference purposes\n\n")
         
-        # Group tables by category
-        client_tables = []
-        demo_tables = []
-        metadata_tables = []
-        other_tables = []
-        
-        for table_name in sorted(table_inserts.keys()):
-            if table_name.startswith('CLIENT_'):
-                client_tables.append(table_name)
-            elif table_name.startswith('DEMO_'):
-                demo_tables.append(table_name)
-            elif table_name.startswith('METADATA_'):
-                metadata_tables.append(table_name)
-            else:
-                other_tables.append(table_name)
-        
-        # Write samples by category
-        categories = [
-            ("Client Management Tables", client_tables),
-            ("Demo/Testing Tables", demo_tables),
-            ("Metadata Tables", metadata_tables),
-            ("Other Tables", other_tables)
-        ]
-        
-        for category_name, table_list in categories:
-            if table_list:
-                outfile.write(f"-- {category_name}\n")
-                outfile.write(f"-- {'=' * len(category_name)}\n\n")
+        # Process tables in the order they were encountered (sequential processing)
+        for table_name in table_order:
+            inserts = table_inserts[table_name]
+            if inserts:  # Only write tables that have data
+                outfile.write(f"-- Table: {table_name} ({len(inserts)} sample(s))\n")
                 
-                for table_name in table_list:
-                    inserts = table_inserts[table_name]
-                    outfile.write(f"-- Table: {table_name} ({len(inserts)} sample(s))\n")
-                    
-                    for insert in inserts:
-                        outfile.write(insert + '\n')
-                    
-                    outfile.write('\n')
+                for insert in inserts:
+                    outfile.write(insert + '\n')
+                
+                outfile.write('\n')
         
         # Write summary
         total_tables = len(table_inserts)
@@ -151,7 +146,7 @@ and creates a smaller test file for development and testing purposes.
                        help='Number of sample INSERT statements per table (default: 3)')
     parser.add_argument('--version', 
                        action='version', 
-                       version='Sample Extractor 2.0')
+                       version='SQL INSERT Sample Extractor 1.0')
     
     args = parser.parse_args()
     

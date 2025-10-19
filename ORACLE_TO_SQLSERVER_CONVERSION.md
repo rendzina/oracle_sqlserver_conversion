@@ -65,19 +65,19 @@ python3 oracle_to_sqlserver_converter.py oracletables.sql
 
 ### Data Type Mappings
 
-| Oracle Type  | SQL Server Type | Notes |
+| Oracle Type | SQL Server Type | Notes |
 |--------------|-----------------|-------|
-| `NUMBER`     | `DECIMAL(18,0)` | Default precision |
-| `NUMBER(1)`  | `BIT` | Boolean values |
-| `NUMBER(3)`  | `TINYINT` | Small integers |
-| `NUMBER(5)`  | `SMALLINT` | Medium integers |
+| `NUMBER` | `DECIMAL(18,0)` | Default precision |
+| `NUMBER(1)` | `BIT` | Boolean values |
+| `NUMBER(3)` | `TINYINT` | Small integers |
+| `NUMBER(5)` | `SMALLINT` | Medium integers |
 | `NUMBER(10)` | `INT` | Standard integers |
 | `NUMBER(19)` | `BIGINT` | Large integers |
-| `VARCHAR2`   | `NVARCHAR` | Unicode strings |
-| `VARCHAR`    | `NVARCHAR` | Unicode strings |
-| `CHAR`       | `NCHAR` | Unicode fixed strings |
-| `DATE`       | `DATETIME2` | Date/time values |
-| `TIMESTAMP`  | `DATETIME2` | High-precision timestamps |
+| `VARCHAR2` | `NVARCHAR` | Unicode strings |
+| `VARCHAR` | `NVARCHAR` | Unicode strings |
+| `CHAR` | `NCHAR` | Unicode fixed strings |
+| `DATE` | `DATETIME2` | Date/time values |
+| `TIMESTAMP` | `DATETIME2` | High-precision timestamps |
 
 ### Function Conversions
 

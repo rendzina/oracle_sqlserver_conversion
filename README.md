@@ -308,30 +308,17 @@ The conversion process tracks:
 - Total lines processed
 - Processing time and memory usage
 
-### Latest Conversion Results (2025-10-17)
+### Key functionality
 
-**Successfully Converted:**
-- **46 tables** processed (including previously missing tables)
-- **710,637 INSERT statements** converted
-- **713,525 total lines** processed
-- **File sizes**: 204MB → Multiple manageable files
-  - Table definitions: 24KB
-  - INSERT statements: 169MB total (split into 8 chunks)
-- **Processing time**: ~2 minutes
-- **Zero syntax errors** in final output
-- **All previously missing tables** now included
-
-**Key Fixes Applied:**
-- ✅ Fixed missing commas between column definitions
-- ✅ Resolved precision specification errors (0 precision → valid precision)
-- ✅ Fixed TIMESTAMP column width errors (TIMESTAMP(0) → DATETIME2)
-- ✅ Converted all Oracle data types to SQL Server equivalents
-- ✅ Applied proper SQL Server syntax formatting
-- ✅ Enhanced data type conversion with precision validation
-- ✅ Added previously missing table definitions (7 additional tables)
-- ✅ Converted Oracle RAW data types to SQL Server text format
-- ✅ Simplified complex DEFAULT clauses (hextoraw/substr → NEWID())
-- ✅ Implemented automatic file separation and chunking
+- ✅ Fixes missing commas between column definitions
+- ✅ Resolves precision specification errors (0 precision → valid precision)
+- ✅ Fixes TIMESTAMP column width errors (TIMESTAMP(0) → DATETIME2)
+- ✅ Converts all Oracle data types to SQL Server equivalents
+- ✅ Applies proper SQL Server syntax formatting
+- ✅ Enhances data type conversion with precision validation
+- ✅ Converts Oracle RAW data types to SQL Server text format
+- ✅ Simplifies complex DEFAULT clauses (hextoraw/substr → NEWID())
+- ✅ Implements automatic file separation and chunking as required
 
 ## SQL Server Deployment
 
