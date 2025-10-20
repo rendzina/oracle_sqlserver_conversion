@@ -69,25 +69,20 @@ class OracleToSQLServerConverter:
         
         # Oracle to SQL Server data type mappings
         self.data_type_mappings = {
-            'NUMBER':       'DECIMAL(18,0)',
-            'NUMBER(*)':    'DECIMAL(18,0)',
-            'NUMBER(1)':    'BIT',
-            'NUMBER(3)':    'TINYINT',
-            'NUMBER(5)':    'SMALLINT',
-            'NUMBER(10)':   'INT',
-            'NUMBER(19)':   'BIGINT',
-            'VARCHAR2':     'NVARCHAR',
-            'VARCHAR':      'NVARCHAR',
-            'CHAR':         'NCHAR',
-            'DATE':         'DATETIME2',
-            'TIMESTAMP':    'DATETIME2',
-            'TIMESTAMP(0)': 'DATETIME2',
-            'TIMESTAMP(6)': 'DATETIME2',
-            'CLOB':         'NVARCHAR(MAX)',
-            'BLOB':         'VARBINARY(MAX)',
-            'RAW':          'NVARCHAR(12)', # Convert RAW to plain text for simplicity
-            'LONG':         'NVARCHAR(MAX)',
-            'LONG RAW':     'VARBINARY(MAX)'
+            'NUMBER':         'DECIMAL(18,0)',  # Safe default when precision/scale unspecified
+            'NUMBER(*)':      'DECIMAL(38,0)',  # Oracle NUMBER(*) allows up to 38 digits — align with SQL Server max precision
+            'FLOAT':          'FLOAT',          # Both support double precision
+            'BINARY_FLOAT':   'REAL',           # Single-precision floating point
+            'BINARY_DOUBLE':  'FLOAT',          # Double precision
+            'DATE':           'DATETIME2(0)',   # Oracle DATE includes date and time (seconds precision)
+            'TIMESTAMP':      'DATETIME2',      # Correct; optionally map to DATETIMEOFFSET if timezone-aware
+            'CLOB':           'NVARCHAR(MAX)',  # Correct for Unicode text
+            'NCLOB':          'NVARCHAR(MAX)',  # Unicode large object
+            'BLOB':           'VARBINARY(MAX)', # Binary large object
+            'LONG':           'NVARCHAR(MAX)',  # Deprecated in Oracle but still supported
+            'LONG RAW':       'VARBINARY(MAX)', # Binary data
+            'ROWID':          'CHAR(18)',       # Common practice; ROWIDs are 18-character strings
+            'UROWID':         'VARCHAR(4000)'   # Universal rowid
         }
     
     def convert_data_type(self, oracle_type: str) -> str:
@@ -110,6 +105,9 @@ class OracleToSQLServerConverter:
             size_match = re.search(r'VARCHAR2\((\d+)(?:\s+BYTE)?\)', oracle_type)
             if size_match:
                 size = int(size_match.group(1))
+                # Oracle VARCHAR2 max is 4000, SQL Server NVARCHAR max is 4000
+                if size > 4000:
+                    return 'NVARCHAR(MAX)'
                 return f'NVARCHAR({size})'
             return 'NVARCHAR(255)'
         
@@ -120,6 +118,16 @@ class OracleToSQLServerConverter:
                 return f'NVARCHAR({size})'
             return 'NVARCHAR(255)'
         
+        elif oracle_type.startswith('NVARCHAR2('):
+            size_match = re.search(r'NVARCHAR2\((\d+)(?:\s+BYTE)?\)', oracle_type)
+            if size_match:
+                size = int(size_match.group(1))
+                # Oracle NVARCHAR2 max is 2000, SQL Server NVARCHAR max is 4000
+                if size > 4000:
+                    return 'NVARCHAR(MAX)'
+                return f'NVARCHAR({size})'
+            return 'NVARCHAR(255)'
+        
         elif oracle_type.startswith('CHAR('):
             size_match = re.search(r'CHAR\((\d+)(?:\s+BYTE)?\)', oracle_type)
             if size_match:
@@ -127,15 +135,20 @@ class OracleToSQLServerConverter:
                 return f'NCHAR({size})'
             return 'NCHAR(1)'
         
+        elif oracle_type.startswith('NCHAR('):
+            size_match = re.search(r'NCHAR\((\d+)(?:\s+BYTE)?\)', oracle_type)
+            if size_match:
+                size = int(size_match.group(1))
+                return f'NCHAR({size})'
+            return 'NCHAR(1)'
+        
         elif oracle_type.startswith('RAW('):
-            # Convert RAW to NVARCHAR for simplicity
+            # Convert RAW to VARBINARY (binary data, not text)
             size_match = re.search(r'RAW\((\d+)\)', oracle_type)
             if size_match:
                 size = int(size_match.group(1))
-                # Convert raw size to appropriate text size (raw is typically hex, so 2 chars per byte)
-                text_size = size * 2
-                return f'NVARCHAR({text_size})'
-            return 'NVARCHAR(12)'
+                return f'VARBINARY({size})'
+            return 'VARBINARY(12)'
         
         elif oracle_type.startswith('TIMESTAMP('):
             return 'DATETIME2'
