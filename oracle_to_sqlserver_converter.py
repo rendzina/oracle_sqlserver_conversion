@@ -817,7 +817,8 @@ class OracleToSQLServerConverter:
 
                 if in_insert_statement:
                     current_insert_lines.append(original_line)
-                    if line.endswith(');'):
+                    # End multi-line INSERT when we find a line ending with ); or just ;
+                    if line.endswith(');') or (line.endswith(';') and not line.startswith('Insert into')):
                         converted_insert = self.convert_multi_line_insert(current_insert_lines)
                         inserts_outfile.write(converted_insert + '\n')
                         in_insert_statement = False
