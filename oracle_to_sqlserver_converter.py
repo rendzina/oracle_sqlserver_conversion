@@ -521,11 +521,11 @@ class OracleToSQLServerConverter:
             string_content = string_content.replace('drop', 'dr')
             string_content = string_content.replace('alter', 'alt')
             
-            # Truncate extremely long strings (over 100 characters)
+            # Truncate extremely long strings (over 500 characters)
             # But preserve proper escaping by truncating at a safe point
-            if len(string_content) > 100:
+            if len(string_content) > 500:
                 # Find a safe truncation point (not in the middle of escaped quotes)
-                truncate_at = 100
+                truncate_at = 500
                 # If we're truncating in the middle of escaped quotes, adjust
                 if truncate_at > 0 and string_content[truncate_at-1:truncate_at+1] == "''":
                     truncate_at -= 1
@@ -613,8 +613,10 @@ class OracleToSQLServerConverter:
             # Skip malformed lines
             return f"-- SKIPPED MALFORMED LINE: {line.strip()}"
         
-        # Remove Oracle-specific statements
-        if any(keyword in line.upper() for keyword in ['USE ', 'SET DEFINE', 'ALTER SESSION']):
+        # Remove Oracle-specific statements (only match at start of line or as standalone commands)
+        if (line.strip().upper().startswith('USE ') or 
+            line.strip().upper().startswith('SET DEFINE') or 
+            line.strip().upper().startswith('ALTER SESSION')):
             return f"-- {line.strip()} (Oracle specific, commented out)"
         
         return line
@@ -685,6 +687,75 @@ class OracleToSQLServerConverter:
         self.conversion_stats['inserts_processed'] += 1
         return line
     
+    def read_complete_insert_statement(self, infile, first_line: str, start_line_num: int) -> str:
+        """
+        Read a complete INSERT statement that may span multiple lines.
+        
+        Properly handles string literals that span across line boundaries by
+        tracking quote states and continuing to read until the statement is complete.
+        
+        Args:
+            infile: File object to read from
+            first_line: The first line of the INSERT statement
+            start_line_num: Line number of the first line (for progress tracking)
+            
+        Returns:
+            str: Complete INSERT statement as a single string
+        """
+        lines = [first_line]
+        current_line = first_line
+        in_string = False
+        string_char = None
+        paren_count = 0
+        
+        while True:
+            # Process each character in the current line
+            for i, char in enumerate(current_line):
+                if not in_string:
+                    if char in ("'", '"'):
+                        in_string = True
+                        string_char = char
+                    elif char == '(':
+                        paren_count += 1
+                    elif char == ')':
+                        paren_count -= 1
+                        # If we've closed all parentheses and line ends with );, we're done
+                        if paren_count == 0 and current_line.strip().endswith(');'):
+                            return ''.join(lines)
+                else:
+                    if char == string_char:
+                        in_string = False
+                        string_char = None
+            
+            # If we're still in a string, we need to continue reading
+            if in_string:
+                try:
+                    next_line = next(infile)
+                    self.conversion_stats['lines_processed'] += 1
+                    lines.append(next_line)
+                    current_line = next_line
+                    continue
+                except StopIteration:
+                    # End of file reached while in string - this is an error
+                    break
+            
+            # If we're not in a string and line ends with );, we're done
+            if not in_string and current_line.strip().endswith(');'):
+                return ''.join(lines)
+            
+            # If we're not in a string and line doesn't end with );, continue reading
+            try:
+                next_line = next(infile)
+                self.conversion_stats['lines_processed'] += 1
+                lines.append(next_line)
+                current_line = next_line
+            except StopIteration:
+                # End of file reached
+                break
+        
+        # Return what we have (might be incomplete)
+        return ''.join(lines)
+    
     def convert_multi_line_insert(self, lines: list) -> str:
         """
         Convert multi-line Oracle INSERT statement to SQL Server format.
@@ -698,7 +769,8 @@ class OracleToSQLServerConverter:
         Returns:
             str: Single converted INSERT statement
         """
-        full_statement = ' '.join(line.strip() for line in lines)
+        # Join lines without adding spaces to preserve string literal integrity
+        full_statement = ''.join(line.strip() for line in lines)
         converted_statement = self.convert_insert_statement(full_statement)
         return converted_statement
     
@@ -803,26 +875,13 @@ class OracleToSQLServerConverter:
                         current_table_lines = []
                     continue
                 
-                # Handle INSERT statements
+                # Handle INSERT statements with proper string literal parsing
                 if line.startswith('Insert into'):
-                    # Check if it's a single-line INSERT (ends with ;)
-                    if line.endswith(';'):
-                        converted_insert = self.convert_insert_statement(line)
+                    # Use intelligent INSERT parsing that handles string literals across lines
+                    complete_insert = self.read_complete_insert_statement(infile, original_line, line_num)
+                    if complete_insert:
+                        converted_insert = self.convert_insert_statement(complete_insert)
                         inserts_outfile.write(converted_insert + '\n')
-                    else:
-                        # Multi-line INSERT statement
-                        in_insert_statement = True
-                        current_insert_lines = [original_line]
-                    continue
-
-                if in_insert_statement:
-                    current_insert_lines.append(original_line)
-                    # End multi-line INSERT when we find a line ending with ); or just ;
-                    if line.endswith(');') or (line.endswith(';') and not line.startswith('Insert into')):
-                        converted_insert = self.convert_multi_line_insert(current_insert_lines)
-                        inserts_outfile.write(converted_insert + '\n')
-                        in_insert_statement = False
-                        current_insert_lines = []
                     continue
                 
                 # Handle SET DEFINE OFF (Oracle specific)
